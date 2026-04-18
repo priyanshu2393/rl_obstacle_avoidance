@@ -1,0 +1,20 @@
+# Metrics Configuration
+metrics:
+  record:
+    enabled: true
+    output_dir: "$(find turtlebot3_metrics)/data"
+    filename: "metrics.csv"
+  
+  compute:
+    path_length: true
+    time_to_goal: true
+    smoothness: true
+    velocity_stats: true
+    acceleration: true
+    success_metrics: true
+  
+  visualize:
+    trajectory: true
+    velocity_profiles: true
+    distance_vs_time: true
+    acceleration: true
