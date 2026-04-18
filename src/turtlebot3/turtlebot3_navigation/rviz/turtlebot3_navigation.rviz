@@ -12,6 +12,8 @@ Panels:
         - /Local Map1/Polygon1
         - /Local Map1/Costmap1
         - /Local Map1/Planner1
+        - /TEB Poses1
+        - /TEB Markers1
       Splitter Ratio: 0.5
     Tree Height: 783
   - Class: rviz/Selection
@@ -268,11 +270,35 @@ Visualization Manager:
           Radius: 0.0299999993
           Shaft Diameter: 0.100000001
           Shaft Length: 0.100000001
-          Topic: /move_base/DWAPlannerROS/local_plan
+          Topic: /move_base/TebLocalPlannerROS/local_plan
           Unreliable: false
           Value: true
       Enabled: true
       Name: Local Map
+    - Alpha: 1
+      Arrow Length: 0.200000003
+      Axes Length: 0.200000003
+      Axes Radius: 0.0199999996
+      Class: rviz/PoseArray
+      Color: 255; 0; 255
+      Enabled: true
+      Head Length: 0.100000001
+      Head Radius: 0.0500000007
+      Name: TEB Poses
+      Shaft Length: 0.100000001
+      Shaft Radius: 0.0199999996
+      Shape: Arrow (Flat)
+      Topic: /move_base/TebLocalPlannerROS/teb_poses
+      Unreliable: false
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /move_base/TebLocalPlannerROS/teb_poses
+      Name: TEB Poses
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
     - Alpha: 1
       Arrow Length: 0.0500000007
       Axes Length: 0.300000012

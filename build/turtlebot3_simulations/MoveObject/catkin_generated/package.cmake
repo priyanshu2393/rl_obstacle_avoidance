@@ -1,6 +1,6 @@
 set(_CATKIN_CURRENT_PACKAGE "move_object")
 set(move_object_VERSION "0.0.1")
-set(move_object_MAINTAINER "Ayush Sawarn <ayush@example.com>")
+set(move_object_MAINTAINER "Ayush Sawarn <ayushsawarn166@gmail.com>")
 set(move_object_PACKAGE_FORMAT "2")
 set(move_object_BUILD_DEPENDS "roscpp" "gazebo_ros")
 set(move_object_BUILD_EXPORT_DEPENDS )

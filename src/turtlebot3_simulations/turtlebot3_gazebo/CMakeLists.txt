@@ -44,6 +44,12 @@ catkin_package(
   DEPENDS GAZEBO
 )
 
+catkin_install_python(PROGRAMS
+  scripts/move_bookstore_boxes.py
+  scripts/randomize_td3_boxes.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
 ################################################################################
 # Build
 ################################################################################

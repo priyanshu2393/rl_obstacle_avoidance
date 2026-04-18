@@ -1,7 +1,7 @@
 <launch>
   <!-- Arguments -->
   <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
-  <arg name="map_file" default="$(find turtlebot3_navigation)/maps/bookstore_map.yaml"/>
+  <arg name="map_file" default="$(find turtlebot3_navigation)/maps/TD3_map.yaml" />
   <arg name="open_rviz" default="true"/>
   <arg name="move_forward_only" default="false"/>
 
@@ -17,7 +17,7 @@
   <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
 
   <!-- move_base -->
-  <include file="$(find turtlebot3_navigation)/launch/move_base.launch">
+  <include file="$(find turtlebot3_navigation)/launch/move_base_teb.launch">
     <arg name="model" value="$(arg model)" />
     <arg name="move_forward_only" value="$(arg move_forward_only)"/>
   </include>
@@ -27,4 +27,5 @@
     <node pkg="rviz" type="rviz" name="rviz" required="true"
           args="-d $(find turtlebot3_navigation)/rviz/turtlebot3_navigation.rviz"/>
   </group>
+  <node pkg="turtlebot3_navigation" type="spinn.py" name="initial_pose_spinner" output="screen"/>
 </launch>

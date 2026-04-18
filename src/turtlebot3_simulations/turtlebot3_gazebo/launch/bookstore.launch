@@ -1,8 +1,12 @@
 <launch>
   <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
-  <arg name="x_pos" default="-2.3"/>
-  <arg name="y_pos" default="6.2"/>
+  <arg name="x_pos" default="0.0"/>
+  <arg name="y_pos" default="0.0"/>
   <arg name="z_pos" default="0.0"/>
+  <arg name="move_boxes" default="true"/>
+  <arg name="box_oscillation_amplitude" default="1.4"/>
+  <arg name="box_oscillation_speed" default="0.25"/>
+  <arg name="box_update_rate" default="20.0"/>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/bookstore.world"/>
@@ -16,4 +20,14 @@
   <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_$(arg model).urdf.xacro" />
 
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model turtlebot3 -x $(arg x_pos) -y $(arg y_pos) -z $(arg z_pos) -param robot_description" />
+
+  <node if="$(arg move_boxes)"
+        name="bookstore_box_mover"
+        pkg="turtlebot3_gazebo"
+        type="move_bookstore_boxes.py"
+        output="screen">
+    <param name="oscillation_amplitude" value="$(arg box_oscillation_amplitude)"/>
+    <param name="oscillation_speed" value="$(arg box_oscillation_speed)"/>
+    <param name="update_rate" value="$(arg box_update_rate)"/>
+  </node>
 </launch>
