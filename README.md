@@ -4,11 +4,11 @@ ROS Noetic + Gazebo workspace for TurtleBot3 navigation in bookstore-style simul
 
 ## What Is Included
 
-- `src/turtlebot3`
+- `turtlebot3`
   TurtleBot3 navigation, SLAM, teleop, and bringup packages.
-- `src/turtlebot3_simulations`
+- `turtlebot3_simulations`
   Gazebo worlds, launch files, robot simulation assets, and custom moving-obstacle scripts.
-- `src/turtlebot3_metrics`
+- `turtlebot3_metrics`
   Scripts and launch files for recording and plotting navigation metrics.
 
 ## Main Features
@@ -51,7 +51,7 @@ Clone this repository into the `src` folder of a catkin workspace:
 
 ```bash
 cd ~/catkin_ws/src
-git clone https://github.com/Ayush-Sawarn/Obstacle-Avoidance.git
+git clone -b teb-dynamic https://github.com/priyanshu2393/rl_obstacle_avoidance.git
 cd ~/catkin_ws
 catkin_make
 source devel/setup.bash
