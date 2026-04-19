@@ -73,8 +73,8 @@ roslaunch turtlebot3_gazebo bookstore.launch
 
 This world includes moving cardboard boxes controlled by:
 
-- [bookstore.launch](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3_simulations/turtlebot3_gazebo/launch/bookstore.launch)
-- [move_bookstore_boxes.py](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3_simulations/turtlebot3_gazebo/scripts/move_bookstore_boxes.py)
+- [bookstore.launch](/turtlebot3_simulations/turtlebot3_gazebo/launch/bookstore.launch)
+- [move_bookstore_boxes.py](turtlebot3_simulations/turtlebot3_gazebo/scripts/move_bookstore_boxes.py)
 
 You can tune obstacle motion from launch arguments:
 
@@ -101,7 +101,7 @@ roslaunch turtlebot3_slam turtlebot3_slam.launch slam_methods:=gmapping
 Save the generated map:
 
 ```bash
-rosrun map_server map_saver -f ~/bookstore_map
+rosrun map_server map_saver -f ./bookstore_map
 ```
 
 ## Navigation
@@ -116,15 +116,15 @@ Or provide a specific map:
 
 ```bash
 roslaunch turtlebot3_navigation turtlebot3_navigation.launch \
-  map_file:=/absolute/path/to/bookstore_map.yaml
+  map_file:=path/to/bookstore_map.yaml
 ```
 
 This repo is configured to use TEB in the navigation stack. Relevant files:
 
-- [move_base.launch](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3/turtlebot3_navigation/launch/move_base.launch)
-- [move_base_teb.launch](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3/turtlebot3_navigation/launch/move_base_teb.launch)
-- [teb_local_planner_params.yaml](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3/turtlebot3_navigation/param/teb_local_planner_params.yaml)
-- [turtlebot3_navigation.rviz](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3/turtlebot3_navigation/rviz/turtlebot3_navigation.rviz)
+- [move_base.launch](turtlebot3/turtlebot3_navigation/launch/move_base.launch)
+- [move_base_teb.launch](turtlebot3/turtlebot3_navigation/launch/move_base_teb.launch)
+- [teb_local_planner_params.yaml](turtlebot3/turtlebot3_navigation/param/teb_local_planner_params.yaml)
+- [turtlebot3_navigation.rviz](turtlebot3/turtlebot3_navigation/rviz/turtlebot3_navigation.rviz)
 
 The RViz config already enables:
 
@@ -136,8 +136,8 @@ The RViz config already enables:
 
 The repo also contains a custom `TD3.world` setup with cardboard boxes that can be randomized and moved through:
 
-- [TD3.launch](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3_simulations/turtlebot3_gazebo/launch/TD3.launch)
-- [randomize_td3_boxes.py](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3_simulations/turtlebot3_gazebo/scripts/randomize_td3_boxes.py)
+- [TD3.launch](turtlebot3_simulations/turtlebot3_gazebo/launch/TD3.launch)
+- [randomize_td3_boxes.py](turtlebot3_simulations/turtlebot3_gazebo/scripts/randomize_td3_boxes.py)
 
 Launch it with:
 
@@ -147,7 +147,7 @@ roslaunch turtlebot3_gazebo TD3.launch
 
 ## Metrics
 
-Metric utilities are available under `src/turtlebot3_metrics`.
+Metric utilities are available under `turtlebot3_metrics`.
 
 Examples:
 
@@ -164,15 +164,9 @@ cd src/turtlebot3_metrics
 
 Useful files:
 
-- [record_metrics.py](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3_metrics/scripts/record_metrics.py)
-- [compute_metrics.py](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3_metrics/scripts/compute_metrics.py)
-- [plot_metrics.py](/home/ayush/DL_Hackathon/Deimos_task1/src/turtlebot3_metrics/scripts/plot_metrics.py)
-
-## Repo Notes
-
-- This repository tracks source code only.
-- Build artifacts like `build/`, `devel/`, and Python `__pycache__/` should stay out of version control.
-- Some world/model assets in this workspace include `:Zone.Identifier` files from Windows extraction; they are not required for ROS/Gazebo execution.
+- [record_metrics.py](turtlebot3_metrics/scripts/record_metrics.py)
+- [compute_metrics.py](turtlebot3_metrics/scripts/compute_metrics.py)
+- [plot_metrics.py](turtlebot3_metrics/scripts/plot_metrics.py)
 
 ## Typical Workflow
 
