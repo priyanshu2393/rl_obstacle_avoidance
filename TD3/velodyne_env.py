@@ -9,6 +9,8 @@ import numpy as np
 import rospy
 import sensor_msgs.point_cloud2 as pc2
 from gazebo_msgs.msg import ModelState
+from geometry_msgs.msg import PointStamped
+from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import PointCloud2
@@ -20,6 +22,9 @@ from visualization_msgs.msg import MarkerArray
 GOAL_REACHED_DIST = 0.3
 COLLISION_DIST = 0.35
 TIME_DELTA = 0.1
+BOX_HEIGHT = 0.15
+BOX_MIN_DISTANCE = 1.5
+BOX_PAIR_DISTANCE = 1.0
 
 
 # Check if the random goal position is located on an obstacle and do not accept it if it is
@@ -65,8 +70,21 @@ def check_pos(x, y):
 class GazeboEnv:
     """Superclass for all Gazebo environments."""
 
-    def __init__(self, launchfile, environment_dim):
+    def __init__(
+        self,
+        launchfile,
+        environment_dim,
+        manual_goal=False,
+        move_boxes=True,
+        dynamic_boxes=False,
+        box_speed=0.35,
+    ):
+
         self.environment_dim = environment_dim
+        self.manual_goal = manual_goal
+        self.move_boxes = move_boxes or dynamic_boxes
+        self.dynamic_boxes = dynamic_boxes
+        self.box_speed = box_speed
         self.odom_x = 0
         self.odom_y = 0
 
@@ -77,6 +95,9 @@ class GazeboEnv:
         self.lower = -5.0
         self.velodyne_data = np.ones(self.environment_dim) * 10
         self.last_odom = None
+        self.pending_goal = None
+        self.box_names = [f"cardboard_box_{i}" for i in range(4)]
+        self.box_state = {}
 
         self.set_self_state = ModelState()
         self.set_self_state.model_name = "r1"
@@ -129,6 +150,12 @@ class GazeboEnv:
         self.odom = rospy.Subscriber(
             "/r1/odom", Odometry, self.odom_callback, queue_size=1
         )
+        self.manual_goal_pose = rospy.Subscriber(
+            "/move_base_simple/goal", PoseStamped, self.goal_pose_callback, queue_size=1
+        )
+        self.manual_goal_point = rospy.Subscriber(
+            "/clicked_point", PointStamped, self.goal_point_callback, queue_size=1
+        )
 
     # Read velodyne pointcloud and turn it into distance data, then select the minimum value for each angle
     # range as state representation
@@ -151,6 +178,18 @@ class GazeboEnv:
     def odom_callback(self, od_data):
         self.last_odom = od_data
 
+    def goal_pose_callback(self, goal_msg):
+        self.pending_goal = (
+            float(goal_msg.pose.position.x),
+            float(goal_msg.pose.position.y),
+        )
+
+    def goal_point_callback(self, goal_msg):
+        self.pending_goal = (
+            float(goal_msg.point.x),
+            float(goal_msg.point.y),
+        )
+
     # Perform an action and read a new state
     def step(self, action):
         target = False
@@ -161,6 +200,8 @@ class GazeboEnv:
         vel_cmd.angular.z = action[1]
         self.vel_pub.publish(vel_cmd)
         self.publish_markers(action)
+        if self.dynamic_boxes:
+            self.update_dynamic_boxes()
 
         rospy.wait_for_service("/gazebo/unpause_physics")
         try:
@@ -264,10 +305,14 @@ class GazeboEnv:
         self.odom_x = object_state.pose.position.x
         self.odom_y = object_state.pose.position.y
 
-        # set a random goal in empty space in environment
-        self.change_goal()
-        # randomly scatter boxes in the environment
-        self.random_box()
+        # Set either a random goal or a manually selected RViz goal.
+        if self.manual_goal:
+            self.wait_for_manual_goal()
+        else:
+            self.change_goal()
+        # Optionally place or randomize boxes in the environment.
+        if self.move_boxes:
+            self.random_box()
         self.publish_markers([0.0, 0.0])
 
         rospy.wait_for_service("/gazebo/unpause_physics")
@@ -331,33 +376,138 @@ class GazeboEnv:
             self.goal_y = self.odom_y + random.uniform(self.upper, self.lower)
             goal_ok = check_pos(self.goal_x, self.goal_y)
 
-    def random_box(self):
-        # Randomly change the location of the boxes in the environment on each reset to randomize the training
-        # environment
-        for i in range(4):
-            name = "cardboard_box_" + str(i)
+    def wait_for_manual_goal(self):
+        rospy.loginfo(
+            "Waiting for a manual goal from RViz on /move_base_simple/goal or /clicked_point"
+        )
 
-            x = 0
-            y = 0
-            box_ok = False
-            while not box_ok:
-                x = np.random.uniform(-6, 6)
-                y = np.random.uniform(-6, 6)
-                box_ok = check_pos(x, y)
-                distance_to_robot = np.linalg.norm([x - self.odom_x, y - self.odom_y])
-                distance_to_goal = np.linalg.norm([x - self.goal_x, y - self.goal_y])
-                if distance_to_robot < 1.5 or distance_to_goal < 1.5:
-                    box_ok = False
-            box_state = ModelState()
-            box_state.model_name = name
-            box_state.pose.position.x = x
-            box_state.pose.position.y = y
-            box_state.pose.position.z = 0.0
-            box_state.pose.orientation.x = 0.0
-            box_state.pose.orientation.y = 0.0
-            box_state.pose.orientation.z = 0.0
-            box_state.pose.orientation.w = 1.0
-            self.set_state.publish(box_state)
+        goal_ok = False
+        while not goal_ok and not rospy.is_shutdown():
+            if self.pending_goal is None:
+                time.sleep(0.1)
+                continue
+
+            goal_x, goal_y = self.pending_goal
+            self.pending_goal = None
+
+            if not check_pos(goal_x, goal_y):
+                rospy.logwarn(
+                    "Rejected manual goal (%.2f, %.2f): goal is outside valid free space"
+                    % (goal_x, goal_y)
+                )
+                continue
+
+            self.goal_x = goal_x
+            self.goal_y = goal_y
+            goal_ok = True
+            rospy.loginfo(
+                "Using manual goal from RViz: x=%.2f, y=%.2f" % (self.goal_x, self.goal_y)
+            )
+
+    def random_box(self):
+        # Randomly change the location of the boxes in the environment.
+        placed_positions = []
+        self.box_state = {}
+        for name in self.box_names:
+            x, y = self.sample_box_position(placed_positions)
+            velocity = (
+                self.sample_box_velocity() if self.dynamic_boxes else np.zeros(2)
+            )
+            self.box_state[name] = {
+                "position": np.array([x, y], dtype=float),
+                "velocity": velocity,
+            }
+            placed_positions.append((x, y))
+            self.publish_box_state(name, x, y)
+
+    def sample_box_position(self, occupied_positions):
+        while True:
+            x = np.random.uniform(-4.5, 4.5)
+            y = np.random.uniform(-4.5, 4.5)
+            if not check_pos(x, y):
+                continue
+
+            distance_to_robot = np.linalg.norm([x - self.odom_x, y - self.odom_y])
+            distance_to_goal = np.linalg.norm([x - self.goal_x, y - self.goal_y])
+            if (
+                distance_to_robot < BOX_MIN_DISTANCE
+                or distance_to_goal < BOX_MIN_DISTANCE
+            ):
+                continue
+
+            too_close = False
+            for other_x, other_y in occupied_positions:
+                if np.linalg.norm([x - other_x, y - other_y]) < BOX_PAIR_DISTANCE:
+                    too_close = True
+                    break
+            if too_close:
+                continue
+            return x, y
+
+    def sample_box_velocity(self):
+        heading = np.random.uniform(-np.pi, np.pi)
+        speed = np.random.uniform(self.box_speed * 0.6, self.box_speed)
+        return np.array([np.cos(heading) * speed, np.sin(heading) * speed])
+
+    def publish_box_state(self, name, x, y):
+        box_state = ModelState()
+        box_state.model_name = name
+        box_state.pose.position.x = float(x)
+        box_state.pose.position.y = float(y)
+        box_state.pose.position.z = BOX_HEIGHT
+        box_state.pose.orientation.x = 0.0
+        box_state.pose.orientation.y = 0.0
+        box_state.pose.orientation.z = 0.0
+        box_state.pose.orientation.w = 1.0
+        self.set_state.publish(box_state)
+
+    def update_dynamic_boxes(self):
+        updated_positions = {}
+        for name in self.box_names:
+            current_state = self.box_state.get(name)
+            if current_state is None:
+                continue
+
+            position = current_state["position"].copy()
+            velocity = current_state["velocity"].copy()
+            candidate = position + velocity * TIME_DELTA
+
+            if not self.valid_box_position(candidate, name, updated_positions):
+                velocity = self.sample_box_velocity()
+                candidate = position + velocity * TIME_DELTA
+
+            if not self.valid_box_position(candidate, name, updated_positions):
+                candidate = position
+
+            current_state["position"] = candidate
+            current_state["velocity"] = velocity
+            updated_positions[name] = candidate
+            self.publish_box_state(name, candidate[0], candidate[1])
+
+    def valid_box_position(self, candidate, current_name, updated_positions):
+        x = float(candidate[0])
+        y = float(candidate[1])
+
+        if not check_pos(x, y):
+            return False
+
+        distance_to_robot = np.linalg.norm([x - self.odom_x, y - self.odom_y])
+        distance_to_goal = np.linalg.norm([x - self.goal_x, y - self.goal_y])
+        if distance_to_robot < BOX_MIN_DISTANCE or distance_to_goal < BOX_MIN_DISTANCE:
+            return False
+
+        for name, state in self.box_state.items():
+            if name == current_name:
+                continue
+
+            other_position = updated_positions.get(name)
+            if other_position is None:
+                other_position = state["position"]
+
+            if np.linalg.norm(candidate - other_position) < BOX_PAIR_DISTANCE:
+                return False
+
+        return True
 
     def publish_markers(self, action):
         # Publish visual data in Rviz

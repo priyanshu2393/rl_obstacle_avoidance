@@ -240,6 +240,8 @@ file_name = "TD3_velodyne"  # name of the file to store the policy
 save_model = True  # Weather to save the model or not
 load_model = False  # Weather to load a stored model
 random_near_obstacle = True  # To take random actions near obstacles or not
+move_boxes = True  # Randomize cardboard box placement on reset
+dynamic_boxes = True  # Move cardboard boxes during the episode
 
 # Create the network storage folders
 if not os.path.exists("./results"):
@@ -250,7 +252,12 @@ if save_model and not os.path.exists("./pytorch_models"):
 # Create the training environment
 environment_dim = 20
 robot_dim = 4
-env = GazeboEnv("multi_robot_scenario.launch", environment_dim)
+env = GazeboEnv(
+    "multi_robot_scenario.launch",
+    environment_dim,
+    move_boxes=move_boxes,
+    dynamic_boxes=dynamic_boxes,
+)
 time.sleep(5)
 torch.manual_seed(seed)
 np.random.seed(seed)
